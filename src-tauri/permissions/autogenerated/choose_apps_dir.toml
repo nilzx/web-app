@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-choose-apps-dir"
+description = "Enables the choose_apps_dir command without any pre-configured scope."
+commands.allow = ["choose_apps_dir"]
+
+[[permission]]
+identifier = "deny-choose-apps-dir"
+description = "Denies the choose_apps_dir command without any pre-configured scope."
+commands.deny = ["choose_apps_dir"]

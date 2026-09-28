@@ -1,0 +1,10 @@
+# Example configuration: `cargo run -- --config ../examples/webdock.toml`
+# (paths are relative to this file)
+apps_dir = "apps"
+data_dir = "../target/example-data"
+
+[webview]
+devtools = true
+
+[dev]
+live_reload = true

@@ -1,0 +1,24 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "launcher",
+  "description": "The launcher page. Hosted web apps get no capability at all.",
+  "windows": ["launcher"],
+  "permissions": [
+    "core:default",
+    "allow-get-overview",
+    "allow-rescan",
+    "allow-open-app",
+    "allow-toggle-pin",
+    "allow-close-app",
+    "allow-reload-app",
+    "allow-open-devtools",
+    "allow-open-location",
+    "allow-storage-usage",
+    "allow-clear-app-data",
+    "allow-import-app",
+    "allow-choose-apps-dir",
+    "allow-set-setting",
+    "allow-create-shortcut",
+    "allow-launch-command"
+  ]
+}

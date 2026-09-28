@@ -1,0 +1,8 @@
+{
+  "name": "便签 Notes",
+  "short_name": "Notes",
+  "description": "IndexedDB 本地笔记，演示 Vite 风格的绝对路径与 History 路由",
+  "theme_color": "#f59e0b",
+  "start_url": "/",
+  "icons": [{ "src": "/assets/icon.svg", "sizes": "any", "type": "image/svg+xml" }]
+}
