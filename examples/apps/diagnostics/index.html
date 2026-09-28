@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>兼容性自检</title>
+<style>
+  :root { --ok:#16a34a; --bad:#dc2626; --warn:#d97706; --bg:#f7f8fb; --card:#fff; --text:#1d2130; --muted:#667085; --border:#e4e7ee; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#10131a; --card:#181c26; --text:#e6e8ef; --muted:#9aa1b2; --border:#282d3a; } }
+  body { margin:0; font:14px/1.55 system-ui,-apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif; background:var(--bg); color:var(--text); }
+  main { max-width: 880px; margin: 0 auto; padding: 28px 24px 40px; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  p.sub { margin: 0 0 22px; color: var(--muted); }
+  .grid { display:grid; grid-template-columns: repeat(auto-fill,minmax(260px,1fr)); gap:12px; }
+  .item { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:12px 14px; }
+  .item b { display:flex; align-items:center; gap:8px; }
+  .item small { color:var(--muted); display:block; margin-top:2px; word-break:break-all; }
+  .dot { width:9px; height:9px; border-radius:50%; background:var(--muted); flex:none; }
+  .ok .dot { background:var(--ok); } .bad .dot { background:var(--bad); } .warn .dot { background:var(--warn); }
+  h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .6px; color: var(--muted); margin: 26px 0 10px; }
+  .actions { display:flex; flex-wrap:wrap; gap:8px; }
+  button, a.btn { font:inherit; padding:7px 14px; border-radius:9px; border:1px solid var(--border); background:var(--card); color:var(--text); cursor:pointer; text-decoration:none; }
+  button:hover, a.btn:hover { border-color:#6366f1; }
+  .counter { font-size: 34px; font-weight: 700; }
+  #drop { margin-top: 10px; padding: 18px; border: 2px dashed var(--border); border-radius: 12px; text-align: center; color: var(--muted); }
+  #drop.over { border-color:#6366f1; color:#6366f1; }
+</style>
+</head>
+<body>
+<main>
+  <h1>兼容性自检 · Diagnostics</h1>
+  <p class="sub">这个页面由 WebDock 从本地文件夹加载。所有检测都在本地完成。</p>
+
+  <h2>持久化存储 Persistence</h2>
+  <div class="grid">
+    <div class="item"><b>本页已被打开</b><div class="counter" id="visits">–</div><small>次（localStorage 计数，重启应用后应继续累加）</small></div>
+    <div class="item" id="idb-item"><b><span class="dot"></span>IndexedDB</b><small id="idb">检测中…</small></div>
+    <div class="item" id="cookie-item"><b><span class="dot"></span>Cookie</b><small id="cookie">检测中…</small></div>
+    <div class="item" id="quota-item"><b><span class="dot"></span>Storage quota</b><small id="quota">检测中…</small></div>
+  </div>
+
+  <h2>运行环境 Environment</h2>
+  <div class="grid" id="env"></div>
+
+  <h2>交互测试 Interactions</h2>
+  <div class="actions">
+    <button id="dl">下载一个文本文件</button>
+    <a class="btn" href="https://tauri.app" target="_blank" rel="noopener">外部链接（target=_blank）</a>
+    <a class="btn" href="https://www.rust-lang.org">外部链接（当前窗口）</a>
+    <button id="popup">window.open 同源页面</button>
+    <a class="btn" href="/deep/route/example">SPA 深层路由</a>
+    <button id="notify">通知权限</button>
+    <button id="reset">重置计数</button>
+  </div>
+  <div id="drop">把文件拖到这里测试 HTML5 拖放</div>
+</main>
+<script>
+  'use strict';
+  const $ = (id) => document.getElementById(id);
+  const mark = (id, state, text) => { const el = $(id + '-item'); if (el) el.className = 'item ' + state; $(id).textContent = text; };
+
+  // localStorage counter
+  const visits = Number(localStorage.getItem('visits') || 0) + 1;
+  localStorage.setItem('visits', String(visits));
+  $('visits').textContent = visits;
+  $('reset').onclick = () => { localStorage.removeItem('visits'); $('visits').textContent = 0; };
+
+  // IndexedDB: count writes across sessions
+  try {
+    const req = indexedDB.open('diagnostics', 1);
+    req.onupgradeneeded = () => req.result.createObjectStore('runs', { autoIncrement: true });
+    req.onsuccess = () => {
+      const tx = req.result.transaction('runs', 'readwrite');
+      const store = tx.objectStore('runs');
+      store.add({ at: Date.now() });
+      const count = store.count();
+      count.onsuccess = () => mark('idb', 'ok', `可用，已记录 ${count.result} 次启动`);
+    };
+    req.onerror = () => mark('idb', 'bad', String(req.error));
+  } catch (e) { mark('idb', 'bad', String(e)); }
+
+  // Cookies
+  try {
+    const n = Number((document.cookie.match(/(?:^|; )diag=(\d+)/) || [])[1] || 0) + 1;
+    document.cookie = `diag=${n}; max-age=31536000; path=/; SameSite=Lax`;
+    const back = document.cookie.includes('diag=');
+    mark('cookie', back ? 'ok' : 'warn', back ? `可用（第 ${n} 次写入）` : '当前协议不支持 Cookie（可用 localStorage 替代）');
+  } catch (e) { mark('cookie', 'warn', String(e)); }
+
+  // Quota & persistence
+  (async () => {
+    if (!navigator.storage?.estimate) return mark('quota', 'warn', '不支持 StorageManager');
+    const { usage, quota } = await navigator.storage.estimate();
+    const persisted = navigator.storage.persist ? await navigator.storage.persist().catch(() => false) : false;
+    mark('quota', 'ok', `已用 ${(usage / 1024).toFixed(1)} KB / 配额 ${(quota / 1048576).toFixed(0)} MB${persisted ? ' · persistent' : ''}`);
+  })();
+
+  // Environment checks
+  const env = [
+    ['Origin', location.origin, 'ok'],
+    ['Secure context', String(window.isSecureContext), window.isSecureContext ? 'ok' : 'bad'],
+    ['User agent', navigator.userAgent, 'ok'],
+    ['WebAssembly', typeof WebAssembly === 'object' ? '支持' : '不支持', typeof WebAssembly === 'object' ? 'ok' : 'bad'],
+    ['crypto.subtle', crypto.subtle ? '可用' : '不可用', crypto.subtle ? 'ok' : 'bad'],
+    ['Service Worker', 'serviceWorker' in navigator ? '可用' : '不可用（需 mode = "localhost"）', 'serviceWorker' in navigator ? 'ok' : 'warn'],
+    ['SharedArrayBuffer', window.crossOriginIsolated ? '可用' : '未开启（cross_origin_isolated = true）', window.crossOriginIsolated ? 'ok' : 'warn'],
+    ['WebGL2', (() => { try { return document.createElement('canvas').getContext('webgl2') ? '支持' : '不支持'; } catch { return '不支持'; } })(), 'ok'],
+    ['ES modules / import()', 'noModule' in HTMLScriptElement.prototype ? '支持' : '不支持', 'ok'],
+    ['Clipboard API', navigator.clipboard ? '可用' : '不可用', navigator.clipboard ? 'ok' : 'warn'],
+    ['Tauri globals', window.__TAURI__ ? '已暴露（不应出现）' : '未暴露 ✓', window.__TAURI__ ? 'bad' : 'ok'],
+    ['Launcher IPC', '检测中…', 'warn'],
+  ];
+  $('env').innerHTML = env.map(([k, v, s]) => `<div class="item ${s}"><b><span class="dot"></span>${k}</b><small></small></div>`).join('');
+  [...$('env').querySelectorAll('small')].forEach((el, i) => { el.textContent = env[i][1]; });
+
+  // Hosted apps must not be able to call launcher commands.
+  (async () => {
+    const cell = $('env').lastElementChild;
+    const set = (text, state) => { cell.className = 'item ' + state; cell.querySelector('small').textContent = text; };
+    const ipc = window.__TAURI_INTERNALS__;
+    if (!ipc?.invoke) return set('无 IPC 通道 ✓', 'ok');
+    try {
+      await ipc.invoke('get_overview');
+      set('可以调用启动器命令（不安全）', 'bad');
+    } catch (e) {
+      set('调用被拒绝 ✓', 'ok');
+    }
+  })();
+
+  // WASM smoke test (tiny module exporting add)
+  WebAssembly.instantiate(new Uint8Array([0,97,115,109,1,0,0,0,1,7,1,96,2,127,127,1,127,3,2,1,0,7,7,1,3,97,100,100,0,0,10,9,1,7,0,32,0,32,1,106,11]))
+    .then(({ instance }) => { if (instance.exports.add(2, 3) !== 5) throw new Error('bad'); })
+    .catch(() => {});
+
+  // Download via blob
+  $('dl').onclick = () => {
+    const blob = new Blob([`WebDock download test\n${new Date().toISOString()}\n`], { type: 'text/plain' });
+    const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(blob), download: 'webdock-test.txt' });
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+  };
+  $('popup').onclick = () => window.open('/index.html?popup=1', '_blank', 'width=700,height=600');
+  $('notify').onclick = async () => {
+    if (!('Notification' in window)) return alert('Notification API 不可用');
+    const p = await Notification.requestPermission();
+    if (p === 'granted') new Notification('WebDock', { body: '通知正常工作' });
+    else alert('权限：' + p);
+  };
+  if (location.pathname !== '/' && location.pathname !== '/index.html') {
+    document.querySelector('h1').textContent += ` · 路由 ${location.pathname}`;
+  }
+  // HTML5 drag & drop must work inside apps
+  const drop = $('drop');
+  drop.ondragover = (e) => { e.preventDefault(); drop.classList.add('over'); };
+  drop.ondragleave = () => drop.classList.remove('over');
+  drop.ondrop = (e) => {
+    e.preventDefault(); drop.classList.remove('over');
+    const files = [...e.dataTransfer.files].map((f) => `${f.name} (${f.size} B)`);
+    drop.textContent = files.length ? '收到：' + files.join(', ') : '收到拖放数据';
+  };
+</script>
+</body>
+</html>

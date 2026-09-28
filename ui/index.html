@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>WebDock</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="i18n.js" defer></script>
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <div class="app" id="app">
+    <header class="topbar">
+      <div class="brand">
+        <img src="logo.svg" alt="" class="brand-logo" width="28" height="28">
+        <span class="brand-name" id="brand-name">WebDock</span>
+      </div>
+      <label class="search">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <input id="search" type="search" autocomplete="off" spellcheck="false" data-i18n-placeholder="search">
+        <kbd class="search-kbd">/</kbd>
+      </label>
+      <div class="toolbar">
+        <select id="sort" class="select" data-i18n-title="sort">
+          <option value="smart" data-i18n="sortSmart"></option>
+          <option value="recent" data-i18n="sortRecent"></option>
+          <option value="name" data-i18n="sortName"></option>
+          <option value="usage" data-i18n="sortUsage"></option>
+        </select>
+        <div class="segmented" role="group">
+          <button id="view-grid" class="icon-btn" data-i18n-title="viewGrid" aria-pressed="true">
+            <svg viewBox="0 0 24 24"><rect x="4" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.5"/></svg>
+          </button>
+          <button id="view-list" class="icon-btn" data-i18n-title="viewList" aria-pressed="false">
+            <svg viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.5" cy="6" r="1"/><circle cx="4.5" cy="12" r="1"/><circle cx="4.5" cy="18" r="1"/></svg>
+          </button>
+        </div>
+        <button id="btn-import" class="icon-btn" data-i18n-title="importApp">
+          <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+        </button>
+        <button id="btn-refresh" class="icon-btn" data-i18n-title="refresh">
+          <svg viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg>
+        </button>
+        <button id="btn-settings" class="icon-btn" data-i18n-title="settings">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <nav class="chips" id="categories" hidden></nav>
+
+    <main class="content" id="content" tabindex="-1">
+      <section id="section-pinned" class="section" hidden>
+        <h2 class="section-title" data-i18n="pinned"></h2>
+        <div class="apps" id="apps-pinned"></div>
+      </section>
+      <section id="section-all" class="section">
+        <h2 class="section-title" id="all-title" data-i18n="allApps"></h2>
+        <div class="apps" id="apps-all"></div>
+      </section>
+      <div class="empty" id="empty" hidden>
+        <div class="empty-art" aria-hidden="true">
+          <svg viewBox="0 0 120 96"><rect x="8" y="14" width="104" height="72" rx="12" class="e1"/><rect x="8" y="14" width="104" height="18" rx="9" class="e2"/><circle cx="20" cy="23" r="3" class="e3"/><circle cx="30" cy="23" r="3" class="e3"/><path d="M50 50l-9 8 9 8M70 50l9 8-9 8" class="e4"/></svg>
+        </div>
+        <h2 data-i18n="emptyTitle"></h2>
+        <p data-i18n="emptyText"></p>
+        <code class="path" id="empty-path"></code>
+        <div class="empty-actions">
+          <button class="btn primary" id="empty-open" data-i18n="openAppsDir"></button>
+          <button class="btn" id="empty-import" data-i18n="importApp"></button>
+          <button class="btn" id="empty-change" data-i18n="changeAppsDir"></button>
+        </div>
+      </div>
+      <div class="no-results" id="no-results" hidden>
+        <p data-i18n="noResults"></p>
+      </div>
+    </main>
+
+    <footer class="statusbar">
+      <span id="status-count"></span>
+      <button class="link" id="status-path" data-i18n-title="openAppsDir"></button>
+    </footer>
+  </div>
+
+  <div class="drop-overlay" id="drop-overlay" hidden>
+    <div class="drop-box">
+      <svg viewBox="0 0 24 24"><path d="M12 4v12M6 10l6 6 6-6M4 20h16"/></svg>
+      <p data-i18n="dropHint"></p>
+    </div>
+  </div>
+
+  <div class="menu" id="menu" role="menu" hidden></div>
+
+  <dialog id="dlg-details" class="dialog">
+    <form method="dialog" class="dialog-body">
+      <header class="dialog-head">
+        <div class="details-icon" id="details-icon"></div>
+        <div>
+          <h3 id="details-name"></h3>
+          <p class="muted" id="details-desc"></p>
+        </div>
+        <button class="icon-btn close" value="close" data-i18n-title="close"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+      </header>
+      <dl class="kv" id="details-kv"></dl>
+      <div class="dialog-actions" id="details-actions"></div>
+    </form>
+  </dialog>
+
+  <dialog id="dlg-settings" class="dialog wide">
+    <form method="dialog" class="dialog-body">
+      <header class="dialog-head">
+        <h3 data-i18n="settings"></h3>
+        <button class="icon-btn close" value="close" data-i18n-title="close"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+      </header>
+      <div class="settings" id="settings"></div>
+    </form>
+  </dialog>
+
+  <dialog id="dlg-confirm" class="dialog small">
+    <form method="dialog" class="dialog-body">
+      <h3 id="confirm-title"></h3>
+      <p id="confirm-text" class="muted"></p>
+      <div class="dialog-actions">
+        <button class="btn" value="cancel" data-i18n="cancel"></button>
+        <button class="btn danger" value="ok" id="confirm-ok"></button>
+      </div>
+    </form>
+  </dialog>
+
+  <div class="toasts" id="toasts" aria-live="polite"></div>
+</body>
+</html>
