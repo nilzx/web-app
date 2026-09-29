@@ -5,10 +5,42 @@ on:
     branches: [main]
   pull_request:
 
+# A new push to a pull request cancels its previous, still running build.
+# Builds of main are never cancelled.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 env:
   CARGO_TERM_COLOR: always
 
 jobs:
+  changes:
+    # Pull requests only build installers when they touch something that ends
+    # up in them; pushes to main always build.
+    runs-on: ubuntu-24.04
+    outputs:
+      app: ${{ steps.filter.outputs.app }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - id: filter
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" != "pull_request" ]; then
+            echo "app=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          # The PR checkout is a merge commit whose first parent is the base.
+          changed=$(git diff --name-only HEAD^1 HEAD)
+          echo "$changed"
+          if echo "$changed" | grep -qE '^(src-tauri/|ui/|package(-lock)?\.json$|rust-toolchain\.toml$|\.github/workflows/)'; then
+            echo "app=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "app=false" >> "$GITHUB_OUTPUT"
+          fi
+
   check:
     strategy:
       fail-fast: false
@@ -39,7 +71,8 @@ jobs:
         run: cargo test
 
   bundle:
-    needs: check
+    needs: [check, changes]
+    if: needs.changes.outputs.app == 'true'
     strategy:
       fail-fast: false
       matrix:
