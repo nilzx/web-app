@@ -6,7 +6,7 @@
 
 [English](../README.md)
 
-![启动器](launcher.png)
+![启动器](launcher.zh-CN.png)
 
 ## 安装
 
