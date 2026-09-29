@@ -23,7 +23,7 @@ function route() {
   current = notes.find((n) => n.id === id) || [...notes].sort((a, b) => b.updated - a.updated)[0] || null;
   $('title').value = current?.title ?? '';
   $('body').value = current?.body ?? '';
-  $('saved').textContent = current ? '保存于 ' + new Date(current.updated).toLocaleString() : '';
+  $('saved').textContent = current ? 'Saved ' + new Date(current.updated).toLocaleString() : '';
   render();
 }
 function go(id) { history.pushState(null, '', '/note/' + encodeURIComponent(id)); route(); }
@@ -36,7 +36,7 @@ function render() {
     .map((n) => {
       const li = document.createElement('li');
       li.className = n === current ? 'active' : '';
-      const b = document.createElement('b'); b.textContent = n.title || '无标题';
+      const b = document.createElement('b'); b.textContent = n.title || 'Untitled';
       const s = document.createElement('small'); s.textContent = new Date(n.updated).toLocaleDateString();
       li.append(b, s);
       li.onclick = () => go(n.id);
@@ -61,7 +61,7 @@ function scheduleSave() {
   clearTimeout(timer);
   timer = setTimeout(async () => {
     await tx('readwrite', (s) => s.put(current));
-    $('saved').textContent = '已保存 ' + new Date(current.updated).toLocaleTimeString();
+    $('saved').textContent = 'Saved ' + new Date(current.updated).toLocaleTimeString();
   }, 300);
 }
 
@@ -70,7 +70,7 @@ $('title').oninput = scheduleSave;
 $('body').oninput = scheduleSave;
 $('q').oninput = render;
 $('del').onclick = async () => {
-  if (!current || !confirm('删除这条笔记？')) return;
+  if (!current || !confirm('Delete this note?')) return;
   await tx('readwrite', (s) => s.delete(current.id));
   notes = notes.filter((n) => n !== current);
   history.replaceState(null, '', '/');
@@ -80,7 +80,7 @@ addEventListener('popstate', route);
 addEventListener('keydown', (e) => { if ((e.ctrlKey || e.metaKey) && e.key === 'n') { e.preventDefault(); create(); } });
 
 if (!notes.length) {
-  const welcome = { id: crypto.randomUUID(), title: '欢迎使用便签', body: '内容保存在这个应用独立的 IndexedDB 中，\n关闭窗口或重启 WebDock 后依然存在。\n\n试试新建几条笔记，然后在启动器中「清除数据」。', updated: Date.now() };
+  const welcome = { id: crypto.randomUUID(), title: 'Welcome to Notes', body: 'Notes are stored in this app\'s own IndexedDB,\nso they survive closing the window or restarting WebDock.\n\nCreate a few notes, then try "Clear data…" in the launcher.', updated: Date.now() };
   notes.push(welcome);
   await tx('readwrite', (s) => s.put(welcome));
 }

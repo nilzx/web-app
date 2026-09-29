@@ -33,8 +33,8 @@ data_dir = ""
 [launcher]
 # Title of the launcher window (useful when shipping a branded bundle).
 title = "WebDock"
-# UI language of the launcher and tray: "auto", "zh" or "en".
-language = "auto"
+# UI language of the launcher and tray: "en", "zh" or "auto" (follow the OS).
+language = "en"
 # Open the app directly when the apps folder contains exactly one app.
 auto_open_single = true
 # Hide the launcher after an app has been opened.
@@ -129,7 +129,7 @@ impl Default for LauncherConfig {
     fn default() -> Self {
         Self {
             title: "WebDock".into(),
-            language: "auto".into(),
+            language: "en".into(),
             auto_open_single: true,
             hide_on_launch: false,
             tray: true,
@@ -364,6 +364,8 @@ mod tests {
         );
         assert_eq!(parsed.webview.isolation, def.webview.isolation);
         assert_eq!(parsed.window.width, def.window.width);
+        assert_eq!(parsed.launcher.language, "en");
+        assert_eq!(def.launcher.language, "en");
     }
 
     #[test]
