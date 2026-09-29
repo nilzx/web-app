@@ -58,6 +58,29 @@ cd src-tauri && cargo run -- --config ../examples/webdock.toml
 
 仓库自带示例：`examples/webdock.toml` 指向 `examples/apps`，包括一个兼容性自检页、一个 IndexedDB 便签应用和一个远程网页应用示例。
 
+macOS 上打包通用版（同时支持 Apple 芯片和 Intel）：
+
+```bash
+rustup target add aarch64-apple-darwin x86_64-apple-darwin
+npm run build -- --target universal-apple-darwin
+```
+
+### macOS 签名与“已损坏”提示
+
+默认配置使用 **ad-hoc 签名**（`tauri.conf.json` 中 `"signingIdentity": "-"`），不需要 Apple 开发者账号。这样的应用从网上下载后，macOS 会提示“无法验证开发者”，第一次打开需要手动放行：
+
+- 打开一次后，到 **系统设置 → 隐私与安全性**，点击 WebDock 旁的 **仍要打开**；
+- 或者在终端执行：`xattr -dr com.apple.quarantine /Applications/WebDock.app`
+
+要让用户双击就能打开，需要 Apple Developer ID 证书签名并公证。在仓库的 Actions secrets 中配置下列变量，CI 会自动签名和公证（未配置时回退到 ad-hoc 签名）：
+
+| Secret | 说明 |
+| --- | --- |
+| `APPLE_CERTIFICATE` | 导出的 Developer ID Application 证书（`.p12`）的 base64 |
+| `APPLE_CERTIFICATE_PASSWORD` | `.p12` 的密码 |
+| `APPLE_SIGNING_IDENTITY` | 证书名称，例如 `Developer ID Application: Your Name (TEAMID)` |
+| `APPLE_ID` / `APPLE_PASSWORD` / `APPLE_TEAM_ID` | 公证用的 Apple ID、App 专用密码和团队 ID |
+
 ## 配置文件
 
 ### 查找顺序

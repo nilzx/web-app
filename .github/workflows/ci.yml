@@ -40,7 +40,6 @@ jobs:
 
   bundle:
     needs: check
-    if: github.event_name == 'push'
     strategy:
       fail-fast: false
       matrix:
@@ -62,16 +61,59 @@ jobs:
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: src-tauri
+      - name: Install macOS targets
+        if: runner.os == 'macOS'
+        # One universal bundle that runs on both Apple Silicon and Intel Macs.
+        run: rustup target add aarch64-apple-darwin x86_64-apple-darwin
       - run: npm ci
-      - run: npm run build
+      - name: Use Apple signing secrets (optional)
+        if: runner.os == 'macOS'
+        shell: bash
+        env:
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        # Without these secrets the app is ad-hoc signed (`signingIdentity: "-"`
+        # in tauri.conf.json). With a Developer ID certificate it is signed and,
+        # when APPLE_ID / APPLE_PASSWORD / APPLE_TEAM_ID are set, notarized.
+        # Only non-empty values are exported: the Tauri CLI treats a variable
+        # that is set but empty as a real value.
+        run: |
+          if [ -n "$APPLE_CERTIFICATE" ] && [ -z "$APPLE_SIGNING_IDENTITY" ]; then
+            echo "::error::APPLE_CERTIFICATE is set but APPLE_SIGNING_IDENTITY is not"
+            exit 1
+          fi
+          for name in APPLE_CERTIFICATE APPLE_CERTIFICATE_PASSWORD APPLE_SIGNING_IDENTITY APPLE_ID APPLE_PASSWORD APPLE_TEAM_ID; do
+            if [ -n "${!name}" ]; then
+              { echo "$name<<__WEBDOCK_EOF__"; echo "${!name}"; echo "__WEBDOCK_EOF__"; } >> "$GITHUB_ENV"
+            fi
+          done
+      - name: Build
+        shell: bash
+        run: |
+          if [ "$RUNNER_OS" = "macOS" ]; then
+            npm run build -- --target universal-apple-darwin
+          else
+            npm run build
+          fi
+      - name: Verify macOS signature
+        if: runner.os == 'macOS'
+        run: |
+          app=src-tauri/target/universal-apple-darwin/release/bundle/macos/WebDock.app
+          codesign --verify --deep --strict --verbose=2 "$app"
+          codesign -dv "$app" 2>&1 | grep -E "Signature|Authority|Identifier|Format"
+          lipo -archs "$app/Contents/MacOS/webdock"
       - uses: actions/upload-artifact@v4
         with:
           name: webdock-${{ runner.os }}
           path: |
-            src-tauri/target/release/bundle/**/*.deb
-            src-tauri/target/release/bundle/**/*.rpm
-            src-tauri/target/release/bundle/**/*.AppImage
-            src-tauri/target/release/bundle/**/*.msi
-            src-tauri/target/release/bundle/**/*.exe
-            src-tauri/target/release/bundle/**/*.dmg
+            src-tauri/target/**/release/bundle/**/*.deb
+            src-tauri/target/**/release/bundle/**/*.rpm
+            src-tauri/target/**/release/bundle/**/*.AppImage
+            src-tauri/target/**/release/bundle/**/*.msi
+            src-tauri/target/**/release/bundle/**/*.exe
+            src-tauri/target/**/release/bundle/**/*.dmg
           if-no-files-found: ignore
