@@ -1,12 +1,12 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="IndexedDB 本地笔记，演示 Vite 风格的绝对路径与 History 路由">
+  <meta name="description" content="Local notes in IndexedDB; demonstrates Vite-style absolute paths and history routing">
   <meta name="theme-color" content="#f59e0b">
   <meta name="color-scheme" content="light dark">
-  <title>便签 Notes</title>
+  <title>Notes</title>
   <link rel="manifest" href="/manifest.webmanifest">
   <link rel="icon" href="/assets/icon.svg">
   <!-- Absolute paths, exactly like a default Vite build output -->
@@ -16,15 +16,15 @@
 <body>
   <aside>
     <div class="head">
-      <input id="q" type="search" placeholder="搜索…">
-      <button id="new" title="新建 (Ctrl+N)">＋</button>
+      <input id="q" type="search" placeholder="Search…">
+      <button id="new" title="New note (Ctrl+N)">+</button>
     </div>
     <ul id="list"></ul>
   </aside>
   <main>
-    <input id="title" placeholder="标题" autocomplete="off">
-    <textarea id="body" placeholder="开始写点什么…"></textarea>
-    <footer><span id="saved"></span><button id="del">删除</button></footer>
+    <input id="title" placeholder="Title" autocomplete="off">
+    <textarea id="body" placeholder="Start writing…"></textarea>
+    <footer><span id="saved"></span><button id="del">Delete</button></footer>
   </main>
 </body>
 </html>

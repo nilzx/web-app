@@ -1,6 +1,6 @@
 'use strict';
 
-// Tiny i18n: Chinese for zh-* locales, English otherwise.
+// Tiny i18n: English by default, Chinese when the launcher asks for it.
 (function () {
   const zh = {
     search: '搜索应用…',
@@ -203,7 +203,7 @@
     saved: 'Saved',
     about: (v, p) => `WebDock ${v} · ${p}`,
   };
-  const lang = (window.__WEBDOCK_LANG__ || navigator.language || 'en').toLowerCase();
+  const lang = (window.__WEBDOCK_LANG__ || 'en').toLowerCase();
   const dict = lang.startsWith('zh') ? zh : en;
   document.documentElement.lang = lang.startsWith('zh') ? 'zh-CN' : 'en';
 

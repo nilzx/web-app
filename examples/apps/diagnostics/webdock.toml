@@ -1,6 +1,6 @@
-name = "兼容性自检 Diagnostics"
-description = "检查存储持久化、安全上下文、WASM、下载、弹窗与外链等能力"
-category = "工具"
+name = "Diagnostics"
+description = "Checks storage persistence, secure context, WASM, downloads, popups and external links"
+category = "Tools"
 version = "1.0.0"
 icon = "icon.svg"
 

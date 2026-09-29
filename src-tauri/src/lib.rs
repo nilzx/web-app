@@ -38,7 +38,8 @@ fn system_data_dir() -> PathBuf {
         .join(IDENTIFIER)
 }
 
-/// UI language: `launcher.language` from the config, else the OS locale.
+/// UI language from `launcher.language`: English unless Chinese is chosen,
+/// either explicitly or through `"auto"` on a Chinese OS locale.
 pub fn ui_language<R: Runtime>(app: &AppHandle<R>) -> &'static str {
     match app
         .state::<Shell>()
@@ -49,8 +50,10 @@ pub fn ui_language<R: Runtime>(app: &AppHandle<R>) -> &'static str {
         .as_str()
     {
         l if l.starts_with("zh") => "zh",
-        "en" => "en",
-        _ if sys_locale::get_locale().is_some_and(|l| l.to_ascii_lowercase().starts_with("zh")) => {
+        "auto"
+            if sys_locale::get_locale()
+                .is_some_and(|l| l.to_ascii_lowercase().starts_with("zh")) =>
+        {
             "zh"
         }
         _ => "en",

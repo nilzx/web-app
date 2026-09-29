@@ -1,8 +1,8 @@
 # A "web link" app: no local files needed, the site opens in its own
 # isolated window with its own persistent storage.
 name = "Excalidraw"
-description = "在线白板（远程网页应用示例）"
-category = "创作"
+description = "Online whiteboard (remote web app example)"
+category = "Creative"
 url = "https://excalidraw.com/"
 
 [window]
